@@ -55,6 +55,7 @@ PySocks @ file:///C:/Users/dev-admin/perseverance-python-buildout/croot/pysocks_
 python-dateutil @ file:///C:/b/abs_3au_koqnbs/croot/python-dateutil_1716495777160/work
 pytz @ file:///C:/b/abs_6ap4tsz1ox/croot/pytz_1713974360290/work
 pywin32==307
+PyYAML @ file:///D:/bld/pyyaml_1725456271438/work
 pyzmq @ file:///D:/bld/pyzmq_1728642398939/work
 requests @ file:///C:/b/abs_9frifg92q2/croot/requests_1721410901096/work
 s3fs @ file:///home/conda/feedstock_root/build_artifacts/s3fs_1729650300071/work

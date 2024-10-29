@@ -82,6 +82,7 @@ dependencies:
   - python_abi=3.12=5_cp312
   - pytz=2024.1=py312haa95532_0
   - pywin32=307=py312h275cf98_3
+  - pyyaml=6.0.2=py312h4389bb4_1
   - pyzmq=26.2.0=py312hd7027bb_3
   - requests=2.32.3=py312haa95532_0
   - s3fs=2024.10.0=pyhd8ed1ab_0
@@ -108,6 +109,7 @@ dependencies:
   - win_inet_pton=1.1.0=py312haa95532_0
   - wrapt=1.14.1=py312h2bbff1b_0
   - xz=5.4.6=h8cc25b3_1
+  - yaml=0.2.5=he774522_0
   - yarl=1.11.0=py312h827c3e9_0
   - yfinance=0.2.48=pyhd8ed1ab_0
   - zeromq=4.3.5=ha9f60a1_6
