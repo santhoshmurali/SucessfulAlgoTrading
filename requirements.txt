@@ -9,5 +9,4 @@ urllib3
 wget
 yfinance
 boto3
-openssl
 s3fs
