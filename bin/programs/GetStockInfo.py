@@ -26,6 +26,7 @@ with open(config_file_path,'r') as config_file:
 AWS_S3_BUCKET = aws_api_config.get('AWS_S3_BUCKET')
 AWS_ACCESS_KEY_ID = aws_api_config.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY  = aws_api_config.get('AWS_SECRET_ACCESS_KEY')
+REGION_NAME = aws_api_config.get('REGION_NAME')
 
 
 #Common Configs
@@ -41,7 +42,7 @@ s3_client = boto3.client(
     "s3",
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name = 'us-east-1'
+    region_name = REGION_NAME
 )
 
 # Function to convert the data read from live csv to a buffer then to pandas dataframe without storing it
@@ -81,7 +82,9 @@ def process_index_master():
             "secret" : AWS_SECRET_ACCESS_KEY,
         }
     )
+    print(f"Files wrote sucessfully in  s3://{AWS_S3_BUCKET}/{index_output_detailed_file_name}")
     return("Successfull!")
 
 if __name__ == '__main__':
     process_index_master()
+    
