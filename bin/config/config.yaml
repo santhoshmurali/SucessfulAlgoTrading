@@ -1,0 +1,5 @@
+n50_output_data_file_name : 'nifty50_raw.csv'
+n50_output_detailed_file_name : 'nifty50_detailed.csv'
+excluded_keys_info : ['companyOfficers']
+# https://www.niftyindices.com/indices/equity
+index_path_50 : ['https://www.niftyindices.com/IndexConstituent/ind_nifty50list.csv','nifty50_raw.csv',nifty50_detailed.csv]

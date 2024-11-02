@@ -1,3 +1,0 @@
-n50_output_data_file_name : 'nifty50_raw.csv'
-n50_output_detailed_file_name : 'nifty50_detailed.csv'
-excluded_keys_info : ['companyOfficers']
