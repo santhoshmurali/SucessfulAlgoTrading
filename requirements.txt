@@ -10,7 +10,6 @@ pandas
 prompt_toolkit
 psutil
 python-dateutil
-pytz
 pywin32
 pyzmq
 requests
