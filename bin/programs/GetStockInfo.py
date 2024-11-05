@@ -1,24 +1,26 @@
 # Importing necessary Libraries
+import io 
+from io import StringIO
+import os
 import pandas as pd
 import yfinance as yf
 import requests
 ### These are the libraries we need for writing the data to s3
 ### https://khandelwal-shekhar.medium.com/read-and-write-to-from-s3-using-python-boto3-and-pandas-s3fs-144341e23aa1
-import io   
-from io import StringIO
+ 
+
 import yaml
 import boto3
-import os
 
 
 # config_file path
-aws_api_key_path = r"..\\config\\cred_config.yaml"
-config_file_path = r"..\\config\\config.yaml"
+AWS_API_KEY_PATH = r"..\\config\\cred_config.yaml"
+CONFIG_FILE_PATH = r"..\\config\\config.yaml"
 
-with open(aws_api_key_path,'r') as aws_api_file:
+with open(AWS_API_KEY_PATH,'r') as aws_api_file:
     aws_api_config = yaml.safe_load(aws_api_file)
 
-with open(config_file_path,'r') as config_file:
+with open(CONFIG_FILE_PATH,'r') as config_file:
     config = yaml.safe_load(config_file)
 
 
