@@ -1,3 +1,27 @@
-strike_size : {"NIFTY" : 50, "BANKNIFTY" : 100}
 index_file_metadata : 'underlying.xlsx'
 options_file_metadata : 'Options.xlsx'
+trade_segment : {
+    'NIFTY': {
+        'Name': 'NIFTY',
+        'StrikeSize': 50,
+        'INDEX_SEG': 'IDX_I',
+        'OPTIONS_SEGMENT': 'NSE_FNO',
+        'POINT_SIZE':0.05
+    },
+    'BANKNIFTY': {
+        'Name': 'BANKNIFTY',
+        'StrikeSize': 100,
+        'INDEX_SEG': 'INDEX_SEG',
+        'OPTIONS_SEGMENT': 'NSE_FNO',
+        'POINT_SIZE':0.05
+    },
+    'CRUDEOIL': {
+        'Name': 'CRUDEOIL',
+        'StrikeSize': 50,
+        'INDEX_SEG': 'MCX_COMM',
+        'OPTIONS_SEGMENT': 'MCX_COMM',
+        'POINT_SIZE':0.1
+    }
+}
+
+
