@@ -45,17 +45,24 @@ def configure_the_workbook():
     workbook = xw.Book(excel_file)
     config_sheet = workbook.sheets['Config']
     home_sheet = workbook.sheets['Home']
-    underlying_sheet = workbook.sheets['Underlying'] 
+    index_sheet = workbook.sheets['Index'] 
     options_sheet = workbook.sheets['Options']
     crude_options_chain_sheet = workbook.sheets['CRUDE']
     
-    dhan,client_id, access_token = connect_to_dhan()
     
+    connections__= connect_to_dhan() #returned as dictionary but accessed like a list
+    
+    
+    dhan = connections__['connection']
+    client_id = connections__['client_id']
+    access_token = connections__['access_token']
     # Load the latest keys and scripts metadata automatically
+    print(dhan)
     security_list = dhan.fetch_security_list("compact")
     
     #--------------------------------------------------------------------------------------------
     # Filter for only NIFTY and BANKNIFTY OPTIONS and MCX
+    #--------------------------------------------------------------------------------------------
     NSE = security_list[(
         (security_list['SEM_EXM_EXCH_ID'] == 'NSE') & 
         (security_list['SEM_INSTRUMENT_NAME'] == 'OPTIDX') & 
@@ -69,9 +76,9 @@ def configure_the_workbook():
                         (security_list['SM_SYMBOL_NAME'] == 'CRUDEOIL')]
 
     filtered_df = pd.concat([NSE, MCX])
-    filtered_df = filtered_df.copy()  # We are copying as a new instance to avoid slice warning    
+    filtered_df = filtered_df.copy()  
 
-    # Below logic will help us to classify the Series type
+    # Below logic will help us to classify the Series type {C - Current, N - Next and F - Future}
     filtered_df['SEM_EXPIRY_DATE_CUSTOM'] = np.nan
     filtered_df['SEM_EXPIRY_DATE_CUSTOM'] = pd.to_datetime(filtered_df.SEM_EXPIRY_DATE)
     filtered_df['SEM_UNDERLYING'] = [x[0] for x in filtered_df.SEM_CUSTOM_SYMBOL.str.split(' ')]
@@ -85,9 +92,11 @@ def configure_the_workbook():
     # Overwrite the sheet called "Options" in Dhan_orders.xlsx
     options_sheet.clear()  # Clear existing content
     options_sheet.range('A1').options(index=False).value = filtered_df[['SEM_SMST_SECURITY_ID', 'SEM_LOT_UNITS', 'SEM_CUSTOM_SYMBOL', 'SEM_STRIKE_PRICE', 'SEM_OPTION_TYPE', 'SEM_UNDERLYING', 'Series']]    
+    
+    
     #--------------------------------------------------------------------------------------------
     # index
-    #------------------------------------
+    #--------------------------------------------------------------------------------------------
     mcx_fut =  security_list[(security_list['SEM_EXM_EXCH_ID']=='MCX') & 
                              (security_list['SM_SYMBOL_NAME']=='CRUDEOIL') & 
                              (security_list['SEM_INSTRUMENT_NAME']=='FUTCOM')]
@@ -100,16 +109,17 @@ def configure_the_workbook():
 
     filtered_df_index['Rank'] = filtered_df_index.groupby('SEM_EXM_EXCH_ID')['SEM_EXPIRY_DATE'].rank(method='dense', ascending=True)
     filtered_df_index = filtered_df_index[(filtered_df_index['Rank']==1.0) | (np.isnan(filtered_df_index['Rank']))]
-    # Overwrite the sheet called "Options" in Dhan_orders.xlsx
-    underlying_sheet = workbook.sheets['Underlying']    
-    underlying_sheet.clear()
-    underlying_sheet.range('A1').options(index=False).value = filtered_df_index[['SEM_SMST_SECURITY_ID','SEM_TRADING_SYMBOL']]    
+    
+
+       
+    index_sheet.clear()
+    index_sheet.range('A1').options(index=False).value = filtered_df_index[['SEM_SMST_SECURITY_ID','SEM_TRADING_SYMBOL']]    
     return({
         "excel_file": excel_file,
         "workbook" : workbook,
         "config_sheet" : config_sheet,
         "home_sheet" : home_sheet,
-        "underlying_sheet" : underlying_sheet,
+        "index_sheet" : index_sheet,
         "options_sheet" : options_sheet,
         "crude_options_chain_sheet":crude_options_chain_sheet,
         "client_id":client_id,
@@ -120,7 +130,7 @@ crude_instruments = []
 
     
 def subscription_management(underlying_sheet,crude_options_chain_sheet):
-    CRUDE_CE_CURRENT = crude_options_chain_sheet.range('D3:D23').value
+    CRUDE_CE_CURRENT = crude_options_chain_sheet.range('D3:D13').value
     index_instruments = [
     (marketfeed.MCX, f"{str(int(underlying_sheet.range('A2').value))}", marketfeed.Ticker),   # Crudeoil
     (marketfeed.IDX, f"{str(int(underlying_sheet.range('A3').value))}", marketfeed.Ticker),      # NIFTY
@@ -128,7 +138,7 @@ def subscription_management(underlying_sheet,crude_options_chain_sheet):
     ]
     new_crude_instruments = [(marketfeed.MCX,f"{str(int(x))}",marketfeed.Ticker) for x in CRUDE_CE_CURRENT]
 
-    instruments = index_instruments + crude_instruments
+    instruments = index_instruments + new_crude_instruments
     return(instruments)
 
 
@@ -146,12 +156,29 @@ def run_feed(home_sheet,clientid,accesstoken,crude_options_sheet,crude_keys,inst
             response = data.get_data()
             if response['security_id'] == 435823 and response['type'] == 'Ticker Data':
                 home_sheet.range('B2').value = response['LTP']  # Update Crudeoil LTP in A2
-            if response['security_id'] == int(crude_keys[0]) and response['type'] == 'Ticker Data':
-                crude_options_sheet.range('E2').value = response['LTP']  # Update Crudeoil LTP in A2
-            if response['security_id'] == int(crude_keys[10]) and response['type'] == 'Ticker Data':
-                crude_options_sheet.range('E13').value = response['LTP']  # Update Crudeoil LTP in A2                
-                print(response)
-            #print(response)
+            if response['security_id'] == int(crude_keys[0]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E3').value = response['LTP']  
+            if response['security_id'] == int(crude_keys[1]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E4').value = response['LTP']  
+            if response['security_id'] == int(crude_keys[2]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E5').value = response['LTP']  
+            if response['security_id'] == int(crude_keys[3]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E6').value = response['LTP']  
+            if response['security_id'] == int(crude_keys[4]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E7').value = response['LTP']  
+            if response['security_id'] == int(crude_keys[5]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E8').value = response['LTP']                                                                                  
+            if response['security_id'] == int(crude_keys[6]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E9').value = response['LTP']  
+            if response['security_id'] == int(crude_keys[7]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E10').value = response['LTP']  
+            if response['security_id'] == int(crude_keys[8]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E11').value = response['LTP']  
+            if response['security_id'] == int(crude_keys[9]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E12').value = response['LTP']  
+            if response['security_id'] == int(crude_keys[10]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E13').value = response['LTP']  
+            print(response)
     except Exception as e:
         print(e)
     finally:
@@ -163,7 +190,7 @@ def run_feed(home_sheet,clientid,accesstoken,crude_options_sheet,crude_keys,inst
 
 def main():
     trade_workbook = configure_the_workbook()
-    instruments = subscription_management(trade_workbook['underlying_sheet'],trade_workbook['crude_options_chain_sheet'])
+    instruments = subscription_management(trade_workbook['index_sheet'],trade_workbook['crude_options_chain_sheet'])
     crude_keys = [x[1] for x in instruments[3:]]
     print(instruments)
     while True:
