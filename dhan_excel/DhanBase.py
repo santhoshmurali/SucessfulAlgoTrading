@@ -9,6 +9,7 @@ import yaml
 import asyncio
 
 
+
 def option_age(x):  # This function will classify the options strike if it belongs to Current series, Next series or Far next.
     if x == 1.0:
         return 'C'  # Current series
@@ -48,6 +49,9 @@ def configure_the_workbook():
     index_sheet = workbook.sheets['Index'] 
     options_sheet = workbook.sheets['Options']
     crude_options_chain_sheet = workbook.sheets['CRUDE']
+    nifty_options_chain_sheet = workbook.sheets['NIFTY']
+    banknifty_options_chain_sheet = workbook.sheets['BANKNIFTY']
+
     
     
     connections__= connect_to_dhan() #returned as dictionary but accessed like a list
@@ -122,62 +126,197 @@ def configure_the_workbook():
         "index_sheet" : index_sheet,
         "options_sheet" : options_sheet,
         "crude_options_chain_sheet":crude_options_chain_sheet,
+        "nifty_options_chain_sheet":nifty_options_chain_sheet,
+        "banknifty_options_chain_sheet":banknifty_options_chain_sheet,
         "client_id":client_id,
         "access_token" : access_token
     })
 
-crude_instruments = []
+instruments = []
 
     
-def subscription_management(underlying_sheet,crude_options_chain_sheet):
-    CRUDE_CE_CURRENT = crude_options_chain_sheet.range('D3:D13').value
+def subscription_management(underlying_sheet,crude_options_chain_sheet,nifty_options_chain_sheet,banknifty_options_chain_sheet):
+    CRUDE_CE_CURRENT = crude_options_chain_sheet.range('D6:D16').value
+    CRUDE_PE_CURRENT = crude_options_chain_sheet.range('G6:G16').value
+    NIFTY_CE_CURRENT = nifty_options_chain_sheet.range('D6:D16').value
+    NIFTY_PE_CURRENT = nifty_options_chain_sheet.range('G6:G16').value
+    BANKNIFTY_CE_CURRENT = banknifty_options_chain_sheet.range('D6:D16').value
+    BANKNIFTY_PE_CURRENT = banknifty_options_chain_sheet.range('G6:G16').value
     index_instruments = [
     (marketfeed.MCX, f"{str(int(underlying_sheet.range('A2').value))}", marketfeed.Ticker),   # Crudeoil
     (marketfeed.IDX, f"{str(int(underlying_sheet.range('A3').value))}", marketfeed.Ticker),      # NIFTY
     (marketfeed.IDX, f"{str(int(underlying_sheet.range('A4').value))}", marketfeed.Ticker)       # BANKNIFTY
     ]
-    new_crude_instruments = [(marketfeed.MCX,f"{str(int(x))}",marketfeed.Ticker) for x in CRUDE_CE_CURRENT]
+    new_crude_instruments_ce = [(marketfeed.MCX,f"{str(int(x))}",marketfeed.Ticker) for x in CRUDE_CE_CURRENT]
+    new_crude_instruments_pe = [(marketfeed.MCX,f"{str(int(x))}",marketfeed.Ticker) for x in CRUDE_PE_CURRENT]
+    new_nifty_instruments_ce = [(marketfeed.NSE_FNO,f"{str(int(x))}",marketfeed.Ticker) for x in NIFTY_CE_CURRENT]
+    new_nifty_instruments_pe = [(marketfeed.NSE_FNO,f"{str(int(x))}",marketfeed.Ticker) for x in NIFTY_PE_CURRENT]
+    new_banknifty_instruments_ce = [(marketfeed.NSE_FNO,f"{str(int(x))}",marketfeed.Ticker) for x in BANKNIFTY_CE_CURRENT]
+    new_banknifty_instruments_pe = [(marketfeed.NSE_FNO,f"{str(int(x))}",marketfeed.Ticker) for x in BANKNIFTY_PE_CURRENT]
 
-    instruments = index_instruments + new_crude_instruments
+    instruments = index_instruments + new_crude_instruments_ce + new_crude_instruments_pe + new_nifty_instruments_ce + new_nifty_instruments_pe + new_banknifty_instruments_ce + new_banknifty_instruments_pe
     return(instruments)
 
 
 
    
-def run_feed(home_sheet,clientid,accesstoken,crude_options_sheet,crude_keys,instruments):    
+def run_feed(home_sheet,clientid,accesstoken,crude_options_sheet,nifty_options_chain_sheet,banknifty_options_chain_sheet,crude_key,nifty_key,banknifty_key,crude_keys_ce,crude_keys_pe,nifty_keys_ce,nifty_keys_pe,banknifty_keys_ce,banknifty_keys_pe,instruments):    
     # WebSocket for real-time LTP updates
     #cid = "1100381471"
     #ac_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJkaGFuIiwicGFydG5lcklkIjoiIiwiZXhwIjoxNzMzOTIyMTM4LCJ0b2tlbkNvbnN1bWVyVHlwZSI6IlNFTEYiLCJ3ZWJob29rVXJsIjoiIiwiZGhhbkNsaWVudElkIjoiMTEwMDM4MTQ3MSJ9.byjw_4xYApTsQEc7s6FGNaEcSTBE6NSsWE3fCsBz3a0D2gtP0uYqdB3WG9EIKVaBaDP-JDLvM48_hXaIBbwKCQ"
     version = "v2"
     try:
+        print(crude_key)
         data = marketfeed.DhanFeed(clientid, accesstoken, instruments, version)
         while True:
             data.run_forever()
             response = data.get_data()
-            if response['security_id'] == 435823 and response['type'] == 'Ticker Data':
-                home_sheet.range('B2').value = response['LTP']  # Update Crudeoil LTP in A2
-            if response['security_id'] == int(crude_keys[0]) and response['type'] == 'Ticker Data': #Options Pricing
-                crude_options_sheet.range('E3').value = response['LTP']  
-            if response['security_id'] == int(crude_keys[1]) and response['type'] == 'Ticker Data': #Options Pricing
-                crude_options_sheet.range('E4').value = response['LTP']  
-            if response['security_id'] == int(crude_keys[2]) and response['type'] == 'Ticker Data': #Options Pricing
-                crude_options_sheet.range('E5').value = response['LTP']  
-            if response['security_id'] == int(crude_keys[3]) and response['type'] == 'Ticker Data': #Options Pricing
+            if response['security_id'] == crude_key and response['type'] == 'Ticker Data':
+                crude_options_sheet.range('C2').value = response['LTP']  # Update Crudeoil LTP in C2
+            if response['security_id'] == nifty_key and response['type'] == 'Ticker Data':
+                nifty_options_chain_sheet.range('C2').value = response['LTP']  # Update NIFTY LTP in AC2                
+            if response['security_id'] == banknifty_key and response['type'] == 'Ticker Data':
+                banknifty_options_chain_sheet.range('C2').value = response['LTP']  # Update BANKNIFTY LTP in AC2                  
+            ### Crude CE
+            if response['security_id'] == int(crude_keys_ce[0]) and response['type'] == 'Ticker Data': #Options Pricing
                 crude_options_sheet.range('E6').value = response['LTP']  
-            if response['security_id'] == int(crude_keys[4]) and response['type'] == 'Ticker Data': #Options Pricing
+            if response['security_id'] == int(crude_keys_ce[1]) and response['type'] == 'Ticker Data': #Options Pricing
                 crude_options_sheet.range('E7').value = response['LTP']  
-            if response['security_id'] == int(crude_keys[5]) and response['type'] == 'Ticker Data': #Options Pricing
-                crude_options_sheet.range('E8').value = response['LTP']                                                                                  
-            if response['security_id'] == int(crude_keys[6]) and response['type'] == 'Ticker Data': #Options Pricing
+            if response['security_id'] == int(crude_keys_ce[2]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E8').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_ce[3]) and response['type'] == 'Ticker Data': #Options Pricing
                 crude_options_sheet.range('E9').value = response['LTP']  
-            if response['security_id'] == int(crude_keys[7]) and response['type'] == 'Ticker Data': #Options Pricing
+            if response['security_id'] == int(crude_keys_ce[4]) and response['type'] == 'Ticker Data': #Options Pricing
                 crude_options_sheet.range('E10').value = response['LTP']  
-            if response['security_id'] == int(crude_keys[8]) and response['type'] == 'Ticker Data': #Options Pricing
-                crude_options_sheet.range('E11').value = response['LTP']  
-            if response['security_id'] == int(crude_keys[9]) and response['type'] == 'Ticker Data': #Options Pricing
+            if response['security_id'] == int(crude_keys_ce[5]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E11').value = response['LTP']                                                                                  
+            if response['security_id'] == int(crude_keys_ce[6]) and response['type'] == 'Ticker Data': #Options Pricing
                 crude_options_sheet.range('E12').value = response['LTP']  
-            if response['security_id'] == int(crude_keys[10]) and response['type'] == 'Ticker Data': #Options Pricing
+            if response['security_id'] == int(crude_keys_ce[7]) and response['type'] == 'Ticker Data': #Options Pricing
                 crude_options_sheet.range('E13').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_ce[8]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E14').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_ce[9]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E15').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_ce[10]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('E16').value = response['LTP']  
+            ### Crude PE
+            if response['security_id'] == int(crude_keys_pe[0]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H6').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_pe[1]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H7').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_pe[2]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H8').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_pe[3]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H9').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_pe[4]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H10').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_pe[5]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H11').value = response['LTP']                                                                                  
+            if response['security_id'] == int(crude_keys_pe[6]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H12').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_pe[7]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H13').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_pe[8]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H14').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_pe[9]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H15').value = response['LTP']  
+            if response['security_id'] == int(crude_keys_pe[10]) and response['type'] == 'Ticker Data': #Options Pricing
+                crude_options_sheet.range('H16').value = response['LTP']     
+            ### NIFTY CE
+            if response['security_id'] == int(nifty_keys_ce[0]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E6').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_ce[1]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E7').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_ce[2]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E8').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_ce[3]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E9').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_ce[4]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E10').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_ce[5]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E11').value = response['LTP']                                                                                  
+            if response['security_id'] == int(nifty_keys_ce[6]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E12').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_ce[7]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E13').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_ce[8]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E14').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_ce[9]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E15').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_ce[10]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('E16').value = response['LTP']  
+            ### NIFTY PE
+            if response['security_id'] == int(nifty_keys_pe[0]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H6').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_pe[1]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H7').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_pe[2]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H8').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_pe[3]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H9').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_pe[4]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H10').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_pe[5]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H11').value = response['LTP']                                                                                  
+            if response['security_id'] == int(nifty_keys_pe[6]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H12').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_pe[7]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H13').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_pe[8]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H14').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_pe[9]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H15').value = response['LTP']  
+            if response['security_id'] == int(nifty_keys_pe[10]) and response['type'] == 'Ticker Data': #Options Pricing
+                nifty_options_chain_sheet.range('H16').value = response['LTP']     
+            
+            ### BANKNIFTY CE
+            if response['security_id'] == int(banknifty_keys_ce[0]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E6').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_ce[1]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E7').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_ce[2]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E8').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_ce[3]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E9').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_ce[4]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E10').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_ce[5]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E11').value = response['LTP']                                                                                  
+            if response['security_id'] == int(banknifty_keys_ce[6]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E12').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_ce[7]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E13').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_ce[8]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E14').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_ce[9]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E15').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_ce[10]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('E16').value = response['LTP']  
+            ### BANKNIFTY PE
+            if response['security_id'] == int(banknifty_keys_pe[0]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H6').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_pe[1]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H7').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_pe[2]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H8').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_pe[3]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H9').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_pe[4]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H10').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_pe[5]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H11').value = response['LTP']                                                                                  
+            if response['security_id'] == int(banknifty_keys_pe[6]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H12').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_pe[7]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H13').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_pe[8]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H14').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_pe[9]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H15').value = response['LTP']  
+            if response['security_id'] == int(banknifty_keys_pe[10]) and response['type'] == 'Ticker Data': #Options Pricing
+                banknifty_options_chain_sheet.range('H16').value = response['LTP']  
+
             print(response)
     except Exception as e:
         print(e)
@@ -190,11 +329,21 @@ def run_feed(home_sheet,clientid,accesstoken,crude_options_sheet,crude_keys,inst
 
 def main():
     trade_workbook = configure_the_workbook()
-    instruments = subscription_management(trade_workbook['index_sheet'],trade_workbook['crude_options_chain_sheet'])
-    crude_keys = [x[1] for x in instruments[3:]]
+    instruments = subscription_management(trade_workbook['index_sheet'],trade_workbook['crude_options_chain_sheet'],trade_workbook['nifty_options_chain_sheet'],trade_workbook['banknifty_options_chain_sheet'])
+    crude_key = instruments[0][1]
+    nifty_key = instruments[1][1]
+    banknifty_key = instruments[2][1]
+    crude_keys_ce = [x[1] for x in instruments[3:14]]
+    crude_keys_pe = [x[1] for x in instruments[14:25]]
+    nifty_keys_ce = [x[1] for x in instruments[25:36]]
+    nifty_keys_pe = [x[1] for x in instruments[36:47]]
+    banknifty_keys_ce = [x[1] for x in instruments[47:58]]
+    banknifty_keys_pe = [x[1] for x in instruments[58:69]]
+
+    
     print(instruments)
     while True:
-        run_feed(trade_workbook['home_sheet'],trade_workbook['client_id'],trade_workbook['access_token'],trade_workbook['crude_options_chain_sheet'],crude_keys,instruments)
+        run_feed(trade_workbook['home_sheet'],trade_workbook['client_id'],trade_workbook['access_token'],trade_workbook['crude_options_chain_sheet'],trade_workbook['nifty_options_chain_sheet'],trade_workbook['banknifty_options_chain_sheet'],crude_key,nifty_key,banknifty_key,crude_keys_ce,crude_keys_pe,nifty_keys_ce,nifty_keys_pe,banknifty_keys_ce,banknifty_keys_pe,instruments)
 
 if __name__ == "__main__":
     main()
