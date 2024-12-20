@@ -85,7 +85,7 @@ def place_buy_order(dhan,script_key, order_qty, trade_price,segment,correlation_
     SLICE_ORDER_BUY = dhan.place_order(security_id=str(int(script_key)), exchange_segment=segment, transaction_type=dhanhq.BUY, quantity=str(int(order_qty)),
                            order_type=dhanhq.LIMIT, product_type=dhanhq.INTRA, price=trade_price, trigger_price= trade_price-0.1, disclosed_quantity=0,
                            after_market_order=False, validity='DAY', amo_time='OPEN',
-                           bo_profit_value=None, bo_stop_loss_Value=None, tag=correlation_id)
+                           bo_profit_value=None, bo_stop_loss_Value=None, tag=correlation_id) 
     print(SLICE_ORDER_BUY)
     return(SLICE_ORDER_BUY)
 
@@ -95,7 +95,7 @@ def place_profit_order(dhan,script_key, order_qty, trade_price,segment,correlati
     print(str(int(script_key)))
     print(int(order_qty))
     print(np.round(float(trade_price),1))
-    print(segment)
+    #print(segment)
 
     SLICE_ORDER_SELL_PROFIT = dhan.place_order(security_id=str(int(script_key)), exchange_segment=segment, transaction_type=dhanhq.SELL, quantity=int(order_qty),
                            order_type=dhanhq.LIMIT, product_type=dhanhq.INTRA, price=np.round(float(trade_price),1), trigger_price=0.0, disclosed_quantity=0, validity='DAY',amo_time='OPEN',
