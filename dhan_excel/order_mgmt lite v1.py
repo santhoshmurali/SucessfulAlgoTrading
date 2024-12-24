@@ -14,6 +14,7 @@ import time
 excel_file = 'DhanTrading.xlsx'
 workbook = xw.Book(excel_file)
 TradeSheet = workbook.sheets['Trade']
+OrdersSheet = workbook.sheets['Orders']
 
 
 
@@ -121,6 +122,11 @@ def get_order_details(dhan):
     
 
     while True:
+        if TradeSheet.range("Generate_PL").value:
+            TradeSheet.range("Generate_PL").value = False
+            OrdersSheet.clear()
+            OrdersSheet.range("A1").options(index=False).value = pd.DataFrame(dhan.get_trade_book()['data'])
+
 
         for strikes in range(4):
 
