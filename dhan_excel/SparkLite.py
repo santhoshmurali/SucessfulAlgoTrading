@@ -178,7 +178,7 @@ def run_feed(clientid,accesstoken,dhan):
                 data.disconnect()          
                 data = marketfeed.DhanFeed(clientid, accesstoken, prepared_instruments, version)
                 refresh_end_time = time.time()
-                pd.DataFrame({'Time':[f"{(refresh_end_time - refresh_start_time)*1000} milliseconds for refresh"]}).to_csv(r"D:\AlgoTrading\Books\Sucessful Algorithmic Trading\SucessfulAlgoTrading\dhan_excel\update.csv")
+                #pd.DataFrame({'Time':[f"{(refresh_end_time - refresh_start_time)*1000} milliseconds for refresh"]}).to_csv(r"D:\AlgoTrading\Books\Sucessful Algorithmic Trading\SucessfulAlgoTrading\dhan_excel\update.csv")
                 print("Subscription updated.")
 
             if ( STRIKE_CHECK != TradeSheet.range('ATM_KEY').value ):
@@ -190,7 +190,7 @@ def run_feed(clientid,accesstoken,dhan):
                 data.disconnect()          
                 data = marketfeed.DhanFeed(clientid, accesstoken, prepared_instruments, version)
                 refresh_end_time = time.time()
-                pd.DataFrame({'Time':[f"{(refresh_end_time - refresh_start_time)*1000} milliseconds for refresh"]}).to_csv(r"D:\AlgoTrading\Books\Sucessful Algorithmic Trading\SucessfulAlgoTrading\dhan_excel\update.csv")
+                #pd.DataFrame({'Time':[f"{(refresh_end_time - refresh_start_time)*1000} milliseconds for refresh"]}).to_csv(r"D:\AlgoTrading\Books\Sucessful Algorithmic Trading\SucessfulAlgoTrading\dhan_excel\update.csv")
                 STRIKE_CHECK = TradeSheet.range('ATM_KEY').value
                 print("Subscription updated based on Strike Change.")           
 
@@ -203,7 +203,7 @@ def run_feed(clientid,accesstoken,dhan):
                 data.disconnect()          
                 data = marketfeed.DhanFeed(clientid, accesstoken, prepared_instruments, version)
                 refresh_end_time = time.time()
-                pd.DataFrame({'Time':[f"{(refresh_end_time - refresh_start_time)*1000} milliseconds for refresh"]}).to_csv(r"D:\AlgoTrading\Books\Sucessful Algorithmic Trading\SucessfulAlgoTrading\dhan_excel\update.csv")
+                #pd.DataFrame({'Time':[f"{(refresh_end_time - refresh_start_time)*1000} milliseconds for refresh"]}).to_csv(r"D:\AlgoTrading\Books\Sucessful Algorithmic Trading\SucessfulAlgoTrading\dhan_excel\update.csv")
                 INDEX_KEY =  TradeSheet.range('IndexKey').value
                 print("Subscription updated based on Strike Change.") 
             
