@@ -121,6 +121,7 @@ def get_order_details(dhan):
     
 
     while True:
+
         for strikes in range(4):
 
             # # NIFTY CE 
