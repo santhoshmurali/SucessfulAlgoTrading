@@ -117,9 +117,8 @@ def get_order_details(dhan):
     TRADE_COMPLETE = False  
     SWING_SWITCH = False
 
+    TRADED_QUANTITY = None
     
-    TEMP_TGT_PROFIT = None
-    TEMP_TGT_SL = None
 
     while True:
         for strikes in range(4):
@@ -128,6 +127,7 @@ def get_order_details(dhan):
             # Stage 1 : Check if the User initatd any orders, if yes. Place the Buy order and do not execute this if again. This is controlled using Activated flag in Excel mapped using  ce_col_activated
             if (TradeSheet.range(f'{QUANTITY}{strikes+6}').value and TradeSheet.range(f'{ORD_ACTIVATED}{strikes+6}').value == False and TRADE_COMPLETE == False): 
                 Quantity = TradeSheet.range(f'{QUANTITY}{strikes+6}').value
+                TRADED_QUANTITY = Quantity
                 Script_Key = TradeSheet.range(f'{SCRIPT_KEY}{strikes+6}').value
                 ltp__ = TradeSheet.range(f'{LTP_}{strikes+6}').value
                 buy_order  = place_buy_order(dhan,Script_Key,Quantity,ltp__-0.1,"ALGO_ORDER")
@@ -176,24 +176,11 @@ def get_order_details(dhan):
                 sl_price_ = TradeSheet.range(f'{SL_TGT}{strikes+6}').value
                 Quantity = TradeSheet.range(f'{QUANTITY}{strikes+6}').value
 
-                if ltp_<trigger_profit_ and ltp_ > trigger_sl_:
-                    TEMP_TGT_SL = None
-                    TEMP_TGT_PROFIT = None
-                    SWING_SWITCH = False
-                elif ltp_>= trigger_profit_:
-                    TEMP_TGT_PROFIT = trigger_profit_
-                    TEMP_TGT_SL = None
-                elif ltp_ <= trigger_sl_:
-                    TEMP_TGT_SL = trigger_sl_
-                    TEMP_TGT_PROFIT = None
-                
-                
-
-
+      
                 # Logic for handling the ordes when price is swining between Tgt pl and tgt sl
                 # If LTP moves above trigger profit we turn the switch On and place the profit order                    
                 if ltp_>=trigger_profit_ and not(PROFIT_ORDER[strikes]) and not(SWING_SWITCH):
-                        PROFIT_ORDER[strikes] = place_profit_order(dhan,Script_Key,Quantity,profit_price_,"")
+                        PROFIT_ORDER[strikes] = place_profit_order(dhan,Script_Key,TRADED_QUANTITY,profit_price_,"")
                         if (LOSS_ORDER[strikes]):
                             CANCEL_ORD = place_cancel_order(dhan,str(LOSS_ORDER[strikes]['data']['orderId']))
                             LOSS_ORDER[strikes] = None
@@ -217,7 +204,7 @@ def get_order_details(dhan):
 
                 # If LTP moves below trigger SL we turn the switch On and place the loss order
                 if ltp_<=trigger_sl_ and not(LOSS_ORDER[strikes]) and not(SWING_SWITCH):
-                        LOSS_ORDER[strikes] = place_sl_order(dhan,Script_Key,Quantity,sl_price_,"")
+                        LOSS_ORDER[strikes] = place_sl_order(dhan,Script_Key,TRADED_QUANTITY,sl_price_,"")
                         if (PROFIT_ORDER[strikes]):
                             CANCEL_ORD = place_cancel_order(dhan,str(PROFIT_ORDER[strikes]['data']['orderId']))
                             PROFIT_ORDER[strikes] = None
@@ -253,6 +240,7 @@ def get_order_details(dhan):
                     TradeSheet.range(f'{SL_ORDER_STATUS}{strikes+6}').value = None
                     TradeSheet.range(f'{SL_ORDER_STATUS}{strikes+6}').value = None
                     TradeSheet.range(f'{SL_PRICE}{strikes+6}').value = None 
+                    TRADED_QUANTITY = None
                     TRADE_COMPLETE = False
 
             # elif (not(TradeSheet.range(f'{QUANTITY}{strikes+6}').value)):
