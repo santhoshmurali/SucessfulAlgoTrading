@@ -127,6 +127,9 @@ def get_order_details(dhan):
             OrdersSheet.clear()
             OrdersSheet.range("A1").options(index=False).value = pd.DataFrame(dhan.get_trade_book()['data'])
 
+        if TradeSheet.range("Safe_Mode").value:
+            time.sleep(0.5)
+
 
         for strikes in range(4):
 
