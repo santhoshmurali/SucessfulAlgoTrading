@@ -206,11 +206,14 @@ def get_order_details(dhan):
                     TradeSheet.range(f'{PROFIT_ORDER_ID}{strikes+6}').value = ord_id_p
                     TradeSheet.range(f'{PROFIT_ORDER_STATUS}{strikes+6}').value = order_details_p['orderStatus']
                     print(f'Profit Order Status {order_details_p['orderStatus']}')
+                if(ltp_<=trigger_sl_ and not(LOSS_ORDER[strikes])):
+                    SWING_SWITCH = False                              
                   # Profit Order is succes    
                 if(PROFIT_ORDER[strikes] and TradeSheet.range(f'{PROFIT_ORDER_STATUS}{strikes+6}').value == 'TRADED' and SWING_SWITCH):
                     SWING_SWITCH = False
                     PROFIT_ORDER[strikes] = None
                     TRADE_COMPLETE = True
+          
 
                 # If LTP moves below trigger SL we turn the switch On and place the loss order
                 if ltp_<=trigger_sl_ and not(LOSS_ORDER[strikes]) and not(SWING_SWITCH):
@@ -230,13 +233,17 @@ def get_order_details(dhan):
                     TradeSheet.range(f'{SL_ORDER_ID}{strikes+6}').value = ord_id_l
                     TradeSheet.range(f'{SL_ORDER_STATUS}{strikes+6}').value = order_details_l['orderStatus']
                     print(f'SL Order Status {order_details_l['orderStatus']}')
+                if(ltp_>=trigger_profit_ and not(PROFIT_ORDER[strikes])):
+                    SWING_SWITCH = False
+
                 # Loss Order is succes    
                 if(LOSS_ORDER[strikes] and TradeSheet.range(f'{SL_ORDER_STATUS}{strikes+6}').value == 'TRADED' and SWING_SWITCH ):
                     SWING_SWITCH = False
                     LOSS_ORDER[strikes] = None
                     TRADE_COMPLETE = True                                          
                 
-                
+                print(f"LOSS ORDER [Strike] : {LOSS_ORDER[strikes]}, PROFIT ORDER [Strike] : {PROFIT_ORDER[strikes]}, LTP : {ltp_}, profit trigger: {trigger_profit_}, loss trigger : {trigger_sl_}, Switch : {SWING_SWITCH}")
+
                 if TRADE_COMPLETE:
                     TradeSheet.range(f'{INPUT_PROP}{strikes+6}').value = None
                     TradeSheet.range(f'{ORD_ACTIVATED}{strikes+6}').value = False                    

@@ -163,7 +163,7 @@ def run_feed(clientid,accesstoken,dhan):
         prepared_instruments = prepare_instruments(instruments)
         security_to_cell = instruments_all
         data = marketfeed.DhanFeed(clientid, accesstoken, prepared_instruments, version)
-        STRIKE_CHECK = TradeSheet.range('ATM_KEY').value
+        STRIKE_CHECK = TradeSheet.range('ITM_ONE_KEY').value
         INDEX_KEY =  TradeSheet.range('IndexKey').value
         while True:
             #Trade Flag
@@ -181,7 +181,7 @@ def run_feed(clientid,accesstoken,dhan):
                 #pd.DataFrame({'Time':[f"{(refresh_end_time - refresh_start_time)*1000} milliseconds for refresh"]}).to_csv(r"D:\AlgoTrading\Books\Sucessful Algorithmic Trading\SucessfulAlgoTrading\dhan_excel\update.csv")
                 print("Subscription updated.")
 
-            if ( STRIKE_CHECK != TradeSheet.range('ATM_KEY').value ):
+            if ( STRIKE_CHECK != TradeSheet.range('ITM_ONE_KEY').value ):
                 refresh_start_time = time.time()
                 instruments_all = refresh_instruments(False,dhan)  # Update instruments by calling subscription_management
                 instruments = list(instruments_all.keys())
@@ -191,7 +191,7 @@ def run_feed(clientid,accesstoken,dhan):
                 data = marketfeed.DhanFeed(clientid, accesstoken, prepared_instruments, version)
                 refresh_end_time = time.time()
                 #pd.DataFrame({'Time':[f"{(refresh_end_time - refresh_start_time)*1000} milliseconds for refresh"]}).to_csv(r"D:\AlgoTrading\Books\Sucessful Algorithmic Trading\SucessfulAlgoTrading\dhan_excel\update.csv")
-                STRIKE_CHECK = TradeSheet.range('ATM_KEY').value
+                STRIKE_CHECK = TradeSheet.range('ITM_ONE_KEY').value
                 print("Subscription updated based on Strike Change.")           
 
             if (INDEX_KEY != TradeSheet.range('IndexKey').value):
