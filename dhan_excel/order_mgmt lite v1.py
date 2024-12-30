@@ -193,10 +193,20 @@ def get_order_details(dhan):
                         PROFIT_ORDER[strikes] = place_profit_order(dhan,Script_Key,TRADED_QUANTITY,profit_price_,"")
                         if (LOSS_ORDER[strikes]):
                             CANCEL_ORD = place_cancel_order(dhan,str(LOSS_ORDER[strikes]['data']['orderId']))
-                            LOSS_ORDER[strikes] = None
-                            TradeSheet.range(f'{SL_ORDER_ID}{strikes+6}').value = CANCEL_ORD['data']['orderId']
-                            TradeSheet.range(f'{SL_ORDER_STATUS}{strikes+6}').value = CANCEL_ORD['status']
-                        SWING_SWITCH = True
+                            ORDER_CANCELLED = False
+                            while CANCEL_ORD and not(ORDER_CANCELLED):
+                                cancel_order_id = CANCEL_ORD['data']['orderId']
+                                time.sleep(0.5)
+                                cancel_order_status = dhan.get_order_by_id(cancel_order_id)['data'][0]['orderStatus']
+                                if cancel_order_status == 'CANCELLED':
+                                    ORDER_CANCELLED = True
+                                    LOSS_ORDER[strikes] = None
+                                    TradeSheet.range(f'{SL_ORDER_ID}{strikes+6}').value = CANCEL_ORD['data']['orderId']
+                                    TradeSheet.range(f'{SL_ORDER_STATUS}{strikes+6}').value = CANCEL_ORD['status']
+                                    TradeSheet.range(f'{PROFIT_ORDER_ID}{strikes+6}').value = ord_id_p
+                                    TradeSheet.range(f'{PROFIT_ORDER_STATUS}{strikes+6}').value = order_details_p['orderStatus']                                    
+                                    SWING_SWITCH = True
+
                 # We Monitor the order till it is not TRADED and SWITCH is ON
                 if (PROFIT_ORDER[strikes]  and PROFIT_ORDER[strikes]['status']=='success' and SWING_SWITCH):
                     ord_id_p = PROFIT_ORDER[strikes]['data']['orderId']
@@ -220,10 +230,20 @@ def get_order_details(dhan):
                         LOSS_ORDER[strikes] = place_sl_order(dhan,Script_Key,TRADED_QUANTITY,sl_price_,"")
                         if (PROFIT_ORDER[strikes]):
                             CANCEL_ORD = place_cancel_order(dhan,str(PROFIT_ORDER[strikes]['data']['orderId']))
-                            PROFIT_ORDER[strikes] = None
-                            TradeSheet.range(f'{PROFIT_ORDER_ID}{strikes+6}').value =  CANCEL_ORD['data']['orderId']
-                            TradeSheet.range(f'{PROFIT_ORDER_STATUS}{strikes+6}').value = CANCEL_ORD['status']                        
-                        SWING_SWITCH = True           
+                            ORDER_CANCELLED = False
+                            while CANCEL_ORD and not(ORDER_CANCELLED):
+                                cancel_order_id = CANCEL_ORD['data']['orderId']
+                                time.sleep(0.5)
+                                cancel_order_status = dhan.get_order_by_id(cancel_order_id)['data'][0]['orderStatus']
+                                if cancel_order_status == 'CANCELLED':
+                                    ORDER_CANCELLED = True
+                                    PROFIT_ORDER[strikes] = None
+                                    TradeSheet.range(f'{PROFIT_ORDER_ID}{strikes+6}').value =  CANCEL_ORD['data']['orderId']
+                                    TradeSheet.range(f'{PROFIT_ORDER_STATUS}{strikes+6}').value = CANCEL_ORD['status']   
+                                    TradeSheet.range(f'{SL_ORDER_ID}{strikes+6}').value = ord_id_l
+                                    TradeSheet.range(f'{SL_ORDER_STATUS}{strikes+6}').value = order_details_l['orderStatus']                                                         
+                                    SWING_SWITCH = True           
+
                 # We Monitor the order till it is not TRADED and SWITCH is ON
                 if(LOSS_ORDER[strikes] and LOSS_ORDER[strikes]['status']=='success' and SWING_SWITCH):
                     ord_id_l = LOSS_ORDER[strikes]['data']['orderId']

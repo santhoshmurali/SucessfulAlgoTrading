@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import yaml
 import time
+from datetime import date
 
 
 """ configuring the workbook and getting the security info
@@ -38,9 +39,13 @@ def connect_to_dhan():
 def main():
     connections__= connect_to_dhan() #returned as dictionary but accessed like a list
     dhan = connections__['connection']
-    TradeHistorySheet.clear()
-    start_date = '2023-01-01'
-    end_date = '2024-12-27'
+    last_row = TradeHistorySheet.range("W1").end('down').row
+    insert_from = last_row + 1
+    past_dates = TradeHistorySheet.range(f"W2:W{last_row}").value
+    past_dates_list = [pd.to_datetime(x[0:10]).date() for x in past_dates]
+    latest_date_in_excel = max(past_dates_list)
+    start_date = latest_date_in_excel
+    end_date = date.today()
     page_count = 0
     trade_history = []
     while dhan.get_trade_history(from_date=start_date,to_date=end_date,page_number=page_count)['data']:
@@ -49,7 +54,7 @@ def main():
         print(f"Imported page {page_count} successfully!")
         page_count = page_count+ 1
     pd_trade_history = pd.DataFrame(trade_history)
-    TradeHistorySheet.range("A1").options(index=False).value = pd_trade_history
+    TradeHistorySheet.range(f"A{insert_from}").options(index=False,header=False).value = pd_trade_history
     
 
 
