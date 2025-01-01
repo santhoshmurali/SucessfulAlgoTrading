@@ -142,8 +142,10 @@ def refresh_instruments(change_instrument, dhan):
 def prepare_instruments(instrument_keys):
     instruments = []
     if TradeSheet.range("INSTRUMENT").value == "CRUDEOIL":
+        market_feed_index = marketfeed.MCX
         market_feed = marketfeed.MCX
     else:
+        market_feed_index = marketfeed.IDX
         market_feed = marketfeed.NSE_FNO
 
     index_key = [(market_feed,instrument_keys[0],marketfeed.Ticker)]
@@ -209,9 +211,10 @@ def run_feed(clientid,accesstoken,dhan):
             
             data.run_forever()
             response = data.get_data()
-           
-
+            
+            
             if response['security_id'] == int(instruments[0]) and response['type'] == 'Ticker Data':
+               
                TradeSheet.range("INDEX_LTP").value = response['LTP']  # Update index ltp
            
            
