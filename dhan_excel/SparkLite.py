@@ -13,7 +13,7 @@ import time
 """ configuring the workbook and getting the security info
 """
 # Load Excel file
-excel_file = 'DhanTrading.xlsx'
+excel_file = 'DhanTrading_v2.xlsx'
 workbook = xw.Book(excel_file)
 TradeSheet = workbook.sheets['Trade']
 OptionsLookUp = workbook.sheets['OptionsLookUp'] 
@@ -66,6 +66,9 @@ def initial_sheet_config():
         (security_list['SEM_TRADING_SYMBOL']=='BANKNIFTY') |
         (security_list['SEM_TRADING_SYMBOL']=='NIFTY')) & (security_list['SEM_SEGMENT']=='I')]
     filtered_df_index = pd.concat([mcx_fut,index])
+    filtered_df_index = (filtered_df_index
+          .sort_values('SEM_SMST_SECURITY_ID')
+          .drop_duplicates('SM_SYMBOL_NAME', keep='first'))
     filtered_df_index = filtered_df_index.copy()
     filtered_df_index['SEM_TRADING_SYMBOL']= [x[0] for x in filtered_df_index.SEM_TRADING_SYMBOL.str.split('-')]
 

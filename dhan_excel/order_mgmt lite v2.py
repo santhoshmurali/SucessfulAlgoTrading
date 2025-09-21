@@ -11,7 +11,7 @@ import time
 """ configuring the workbook and getting the security info
 """
 # Load Excel file
-excel_file = 'DhanTrading.xlsx'
+excel_file = 'DhanTrading_v2.xlsx'
 workbook = xw.Book(excel_file)
 TradeSheet = workbook.sheets['Trade']
 OrdersSheet = workbook.sheets['Orders']
