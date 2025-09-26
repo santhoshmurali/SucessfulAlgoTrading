@@ -153,6 +153,10 @@ def get_order_details(dhan):
     OrderMgmt.range('LMT_PRICE').value = None
     BUY_ORDER_STATUS = None
     BUY_ORDER_PRICE = None
+    # CREATE A LIST TO STORE ALL BUY ORDERS THAT ARE PLACED
+    BUY_ORDER_LIST = []
+    # CREATE A LIST TO STORE ALL SELL ORDERS THAT ARE PLACED
+    SELL_ORDER_LIST = []
     while True:
         # Stage 1 : Check if the initiate flag is set to start and LMT price is set in the excel sheet and if prce is above LMT price, initiate a buy order
         if (OrderMgmt.range('INITIATE').value == "START" and OrderMgmt.range('LMT_PRICE').value > 0 and OrderMgmt.range('LMT_PRICE').value != None) :
@@ -171,7 +175,7 @@ def get_order_details(dhan):
         # Stage 2 : If the order is placed successfully, we have to start capturing the status of the order as the initial status and leave this condition.
         if (BUY_ORDER_STATUS == "CREATED" and OrderMgmt.range('TOTAL_ORDERED_QTY').value == 0 and buy_order):
             BUY_ORDER_STATUS = "PLACED"
-            print(buy_order)
+
 
 
 
