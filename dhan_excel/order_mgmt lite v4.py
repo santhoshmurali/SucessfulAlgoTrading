@@ -136,7 +136,9 @@ def get_order_details(dhan):
 
             # # NIFTY CE 
             # Stage 1 : Check if the User initatd any orders, if yes. Place the Buy order and do not execute this if again. This is controlled using Activated flag in Excel mapped using  ce_col_activated
-            if (TradeSheet.range(f'{QUANTITY}{strikes+6}').value and TradeSheet.range(f'{ORD_ACTIVATED}{strikes+6}').value == False and TRADE_COMPLETE == False): 
+            if (TradeSheet.range(f'{QUANTITY}{strikes+6}').value and 
+                    TradeSheet.range(f'{ORD_ACTIVATED}{strikes+6}').value == False and 
+                    TRADE_COMPLETE == False): 
                 Quantity = TradeSheet.range(f'{QUANTITY}{strikes+6}').value
                 TRADED_QUANTITY = Quantity
                 Script_Key = TradeSheet.range(f'{SCRIPT_KEY}{strikes+6}').value
@@ -176,12 +178,19 @@ def get_order_details(dhan):
                 TradeSheet.range(f'{BUY_ORDER_ID}{strikes+6}').value  = order_details['orderId']
                 TradeSheet.range(f'{BUY_ORDER_STATUS}{strikes+6}').value  = order_details['orderStatus']    
                 TradeSheet.range(f'{ORDER_QTY}{strikes+6}').value = order_details['quantity']
-            
+
+
             # Stage 4 : This is where all drama happens. Once the status is updated to "TRADED", we begin Exit Phase.
             if (TradeSheet.range(f'{QUANTITY}{strikes+6}').value and TradeSheet.range(f'{ORD_ACTIVATED}{strikes+6}').value == True and 
                 TradeSheet.range(f'{BUY_ORDER_ID}{strikes+6}') and TradeSheet.range(f'{BUY_ORDER_STATUS}{strikes+6}').value == "TRADED"): 
                 Script_Key = TradeSheet.range(f'{SCRIPT_KEY}{strikes+6}').value
-                avg_executed_price =  order_details['price']
+                print("------------------------- Debug")
+                print(dhan.get_order_by_id(ord_id)['data'])
+                print("------------------------- Debug End")
+                avg_executed_price =  order_details['price'] # Order placed price
+                #avg_executed_price =  order_details['averageTradedPrice'] # Order executed price
+                
+                
                 TradeSheet.range(f'{BUY_PRICE}{strikes+6}').value = avg_executed_price
                 ltp_ = TradeSheet.range(f'{LTP_}{strikes+6}').value
                 trigger_profit_ = TradeSheet.range(f'{PROFIT_TRIGGER_PRICE}{strikes+6}').value
