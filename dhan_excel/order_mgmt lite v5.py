@@ -1,8 +1,9 @@
+import sys
 import os
 from os import access
 import xlwings as xw
 from connect_to_dhan import Connection
-from dhanhq import dhanhq
+from dhanhq import dhanhq, DhanContext
 import numpy as np
 import pandas as pd
 import yaml
@@ -44,23 +45,27 @@ SL_TRIGGER_PRICE = "Z"
 ORDER_QTY = "AA"
 
 
-
-
-def connect_to_dhan():
-    client_id =  os.getenv('DHAN_CLIENT_ID')
-    access_token = os.getenv('DHAN_ACCESS_TOKEN')
-
+def connect_to_dhan(sandbox):
+    if sandbox:
+        client_id =  os.getenv('SB_DHAN_CLIENT_ID')
+        access_token = os.getenv('SB_DHAN_ACCESS_TOKEN')
+        dhan_context = DhanContext(client_id, access_token, use_sandbox=True)
+    else:
+        client_id =  os.getenv('DHAN_CLIENT_ID')
+        access_token = os.getenv('DHAN_ACCESS_TOKEN')
+        dhan_context = DhanContext(client_id, access_token, use_sandbox=False)
+    
     # Establish connection to Dhan
     try:
-        DhanConnector = Connection(client_id, access_token)
-        ConnectionObject = DhanConnector.connect_dhan()
-        dhan = ConnectionObject['conn']
+        dhan = dhanhq(dhan_context)
     except Exception as e :
         raise ConnectionError(f"Can't connect {e}")  
 
     return({"connection":dhan,
             "client_id":client_id,
-            "access_token":access_token})    
+            "access_token":access_token})     
+
+  
 
 #Order Placement Functions
 def place_buy_order(dhan,script_key, order_qty, trade_price,correlation_id):
@@ -363,10 +368,19 @@ def get_order_details(dhan):
             
 
 def main():
+    """
+    if sys.argv[0]==dev then connect to sanbox api else connect to production api
+    """
+    if sys.argv[1]=='dev':
+        connections__= connect_to_dhan(sanbox=True)
+    elif sys.argv[1]=='prod':
+        connections__= connect_to_dhan(sanbox=False)
+         
+
     connections__= connect_to_dhan() #returned as dictionary but accessed like a list
     dhan = connections__['connection']
     # print(instruments)
-    print("Order MGMT started!")
+    print(f"{sys.argv[1]} - Order MGMT started!")
     get_order_details(dhan)
 
 

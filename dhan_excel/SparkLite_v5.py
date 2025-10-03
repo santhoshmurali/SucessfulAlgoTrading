@@ -1,9 +1,10 @@
 import asyncio
+import sys
 import os
 from os import access
 import xlwings as xw
 from connect_to_dhan import Connection
-from dhanhq import dhanhq
+from dhanhq import dhanhq, DhanContext
 import numpy as np
 import pandas as pd
 from dhanhq import marketfeed
@@ -72,15 +73,25 @@ def option_age(x):  # This function will classify the options strike if it belon
     else:
         return 'F'  # Far next series
 
-def connect_to_dhan():
-    client_id =  os.getenv('DHAN_CLIENT_ID')
-    access_token = os.getenv('DHAN_ACCESS_TOKEN')
-
+def connect_to_dhan(sandbox):
+    if sandbox:
+        client_id =  os.getenv('SB_DHAN_CLIENT_ID')
+        access_token = os.getenv('SB_DHAN_ACCESS_TOKEN')
+        dhan_context = DhanContext(client_id, access_token, use_sandbox=True)
+    else:
+        client_id =  os.getenv('DHAN_CLIENT_ID')
+        access_token = os.getenv('DHAN_ACCESS_TOKEN')
+        dhan_context = DhanContext(client_id, access_token, use_sandbox=False)
+    
     # Establish connection to Dhan
     try:
-        DhanConnector = Connection(client_id, access_token)
-        ConnectionObject = DhanConnector.connect_dhan()
-        dhan = ConnectionObject['conn']
+        if sandbox:
+            dhan = dhanhq(dhan_context)
+        else:
+            DhanConnector = Connection(client_id, access_token)
+            ConnectionObject = DhanConnector.connect_dhan()
+            dhan = ConnectionObject['conn']
+        
     except Exception as e :
         raise ConnectionError(f"Can't connect {e}")  
 
@@ -90,8 +101,8 @@ def connect_to_dhan():
 
 
 
-def initial_sheet_config():
-    connections__= connect_to_dhan() #returned as dictionary but accessed like a list
+def initial_sheet_config(sandbox):
+    connections__= connect_to_dhan(sandbox) #returned as dictionary but accessed like a list
     dhan = connections__['connection']
     client_id = connections__['client_id']
     access_token = connections__['access_token']
@@ -319,7 +330,15 @@ def run_feed(clientid,accesstoken,dhan):
 
 
 def main():
-    set_up_worksheet = initial_sheet_config()
+    """
+    if sys.argv[0]=dev then connect to sanbox api else connect to production api
+    """
+    print(sys.argv[1])
+    if sys.argv[1]=='dev':
+        set_up_worksheet = initial_sheet_config(sandbox=True)
+    elif sys.argv[1]=='prod':
+        set_up_worksheet = initial_sheet_config(sandbox=False)
+        
     print("Connected to Dhan Data!")
     dhan = set_up_worksheet['connection']
     cid = set_up_worksheet['client_id']
