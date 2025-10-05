@@ -1,0 +1,433 @@
+#function to connect ot dhanapi
+
+PENDING_BUY_ORDERS = []
+PENDING_SELL_ORDERS = []
+
+OPEN_QTY= 0
+TRADED_QTY = 0
+AVG_PRICE = 0.0
+dhan = connect_dhanapi()
+TRADING_EXCEL = "trading.xlsx"
+
+CONST BUY_CORR_ID = "BUY_ENTER"
+CONST SELL_PROFIT_CORR_ID = "SELL_PROFIT"
+CONST SELL_LOSS_CORR_ID = "SELL_LOSS"
+CONST SELL_BE_CORR_ID = "SELL_BE"
+
+BUY_TAG = ""
+SELL_PROFIT_TAG = ""
+SELL_LOSS_TAG = ""
+SELL_BE_TAG = ""
+
+# all these should get in to while loop later
+TRADINGSHEET = TRADING_EXCEL["TRADEMGMT"]
+TRIGGER = TRADINGSHEET.RANGE["INITIATE"].value
+STATUS = TRADINGSHEET.RANGE["TRADE_STATUS"].value
+LIMIT_PRICE = TRADINGSHEET.RANGE["LIMIT_PRICE"].value
+SYMBOL_KEY = TRADINGSHEET.RANGE["SYMBOL_KEY"].value
+CAPITAL = TRADINGSHEET.RANGE["CAPITAL"].value
+QTY = TRADINGSHEET.RANGE["QTY"].value
+LTP = TRADINGSHEET.RANGE["LTP"].value
+TRIGGER_PROFIT = TRADINGSHEET.RANGE["TRIGGER_PROFIT"]
+TRIGGER_SL =TRADINGSHEET.RANGE["TRIGGER_SL"]
+PROFIT_TARGET = TRADINGSHEET.RANGE["PROFIT_TARGET"]
+SL_TARGET = TRADINGSHEET.RANGE["SL_TARGET"]
+AVG_BUY_PRICE = TRADINGSHEET.RANGE["AVG_BUY_PRICE"]
+
+.FREEZE_QTY_MAP = {
+    'NIFTY':1800,
+    'BANKN': 1500,
+}
+
+
+// def connect_dhanapi():
+//     .env.DHAN_API_KEY = "your_api_key"
+//     .env.DHAN_API_SECRET = "your_api_secret"
+//     .env.DHAN_API_BASE_URL = "https://api.dhan.co"
+//     .env.DHAN_API_VERSION = "v2"
+//     return(dhanapi.connect(dhancontext))
+
+
+// # python code
+// def compress_positions(
+//     positions_list: List[Dict[str, Any]],
+//     id_key: str = "securityId",
+//     qty_key: str = "netQty",
+// ) -> Dict[str, int]:
+//     """
+//     Build a dictionary like {securityId: total_netQty}.
+//     - Sums netQty if the same securityId appears multiple times.
+//     - Skips malformed entries gracefully.
+//     """
+//     agg: Dict[str, int] = defaultdict(int)
+//     for p in positions_list or []:
+//         if not isinstance(p, dict):
+//             continue
+//         sec_id = p.get(id_key)
+//         qty = p.get(qty_key, 0)
+//         if sec_id is None:
+//             continue
+//         sec_id_str = str(sec_id).strip()
+//         try:
+//             qty_int = int(qty)
+//         except (TypeError, ValueError):
+//             continue
+//         if sec_id_str:
+//             agg[sec_id_str] += qty_int
+//     return dict(agg)    
+
+// def get_current_positions(dhan, symbol_key: str):
+//     positions_list = dhan.get_positions()
+//     positions = compress_positions(positions_list)
+//     return positions.get(symbol_key, 0)
+
+def slice_the_order(total_qty: int): -> dict[str, int]:
+    slices = {}
+    INDEX_NAME =  LEFT(TRADINGSHEET.RANGE["INDEX_NAME"].value,5)
+    FREEZE_QTY = .FREEZE_QTY_MAP[INDEX_NAME]
+    if total_qty <= FREEZE_QTY
+        slice_qty = 0
+        non_slce_qty = total_qty
+    else:
+        total_slices = int(total_qty/FREEZE_QTY)
+        slice_qty = total_slices * FREEZE_QTY
+        non_slce_qty = mod(total_qty, FREEZE_QTY)
+
+    slices = {
+        "slice_qty": slice_qty,
+        "non_slce_qty": non_slce_qty
+    }
+    return slices
+
+
+#python code
+def process_order_details(order_details,qty:bool=False):
+    """
+    Process order details and return pending orders, total quantities, and average price.
+    
+    Args:
+        order_details (list): List of order dictionaries
+        
+    Returns:
+        dict: {
+            'pending_order_ids': list of order IDs with PENDING status,
+            'total_quantity': sum of filled quantities (positive for BUY, negative for SELL),
+            'average_price': weighted average price of TRADED orders
+        }
+    """
+    pending_order_ids = []
+    total_filled_qty = 0
+    sumproduct = 0  # Sum of (filledQty * averageTradedPrice)
+    total_traded_qty = 0  # Sum of filledQty for TRADED orders
+    transaction_type = None
+    
+    for order in order_details:
+        order_status = order.get('orderStatus')
+        order_id = order.get('orderId')
+        filled_qty = order.get('filledQty', 0)
+        avg_price = order.get('averageTradedPrice', 0)
+        trans_type = order.get('transactionType')
+        
+        # Set transaction type from first order (assuming all have same type)
+        if transaction_type is None:
+            transaction_type = trans_type
+        
+        # Collect pending order IDs
+        if order_status == 'PENDING' or order_status == 'TRANSIT':
+            pending_order_ids.append(order_id)
+
+        
+        # Process TRADED orders
+        if order_status == 'TRADED':
+            # Calculate sumproduct for average price
+            sumproduct += filled_qty * avg_price
+            total_traded_qty += filled_qty
+    
+    
+    
+    // # Calculate total quantity based on transaction type
+    // if transaction_type == 'BUY':
+    //     total_filled_qty = total_traded_qty
+    // elif transaction_type == 'SELL':
+    //     total_filled_qty = -1 * total_traded_qty
+    
+    # Calculate average price
+    if total_traded_qty > 0:
+        average_price = sumproduct / total_traded_qty
+    else:
+        average_price = 0.0
+    
+    if qty:
+        return total_filled_qty
+    else
+        return {
+            'pending_order_ids': pending_order_ids,
+            'traded_order_ids':traded_order_ids,
+            'total_quantity': total_filled_qty,
+            'average_price': average_price
+        }
+
+
+
+def get_order_status(dhan, correlation_ids: str):
+    order_details = dhan.get_order_by_correlationID(correlation_id)
+    processed = process_order_details(order_details)
+    PENDING_ORDERS = processed['pending_order_ids']
+    TRADED_QTY = processed['total_filled_qty']
+    AVG_PRICE = processed['average_price']
+    return PENDING_ORDERS, TRADED_QTY, AVG_PRICE
+
+def get_updated_open_trades(dhan,correlation_id_buy, correlation_id_sell_profit, correlation_id_sell_loss, correlation_id_sell_be): -> float
+    order_details_buy = 0.0 if correlation_id_buy="" else dhan.get_order_by_correlationID(correlation_id_buy,True)
+    order_details_sell_profit = 0.0 if correlation_id_sell_profit= "" else dhan.get_order_by_correlationID(correlation_id_sell_profit,True)
+    order_details_sell_loss = 0.0 if correlation_id_sell_loss="" else dhan.get_order_by_correlationID(correlation_id_sell_loss,True)
+    order_details_sell_be = 0.0 if correlation_id_sell_be = "" else dhan.get_order_by_correlationID(correlation_id_sell_be,True)
+    return order_details_buy - (order_details_sell_profit+order_details_sell_loss+order_details_sell_be)
+
+    
+
+# python code
+def place_buy_order(script_key: str, qty: int, trade_price: float,correlation_id):
+
+    ORDER_QUANTITY = slice_the_order(qty)
+    execution_time = datetime.now().strftime("%H%M%S")
+    
+    buy_tag = correlation_id+"_"+execution_time
+    
+    SLICE_ORD_QTY = ORDER_QUANTITY['slice_qty']
+    NON_SLICE_ORD_QTY = ORDER_QUANTITY['non_slce_qty']
+    if SLICE_ORD_QTY > 0:
+        print(f"Slice order QTY = {SLICE_ORD_QTY}")
+        SLICE_ORDER_BUY = dhan.place_slice_order(security_id=str(int(script_key)),    # The ID of the security to trade.
+                                        exchange_segment=dhanhq.NSE_FNO,             # The exchange segment (e.g., NSE, BSE).
+                                        transaction_type=dhanhq.BUY,                 # The type of transaction (BUY/SELL).
+                                        quantity=str(int(SLICE_ORD_QTY)),            # The quantity of the order.
+                                        order_type=dhanhq.LIMIT,                     # The type of order (LIMIT/MARKET/SL).
+                                        product_type=dhanhq.INTRA,                   # The product type (CNC, MIS, etc.).
+                                        price=trade_price,                           # The price of the order.
+                                        trigger_price= trade_price-0.1,              # The trigger price for the order.
+                                        disclosed_quantity=0,                        # The disclosed quantity for the order.
+                                        after_market_order=False,                    # Flag for after market order.
+                                        validity='DAY',                              # The validity of the order (DAY, IOC, etc.).
+                                        amo_time='OPEN',                             # The time for AMO orders.
+                                        bo_profit_value=None,                        # The profit value for BO orders.
+                                        bo_stop_loss_Value=None,                     # The stop loss value for BO orders.
+                                        tag= buy_tag                                 #  correlation ID for tracking.
+                                        )     
+    if NON_SLICE_ORD_QTY > 0:
+        print(f"Non slice order QTY = {NON_SLICE_ORD_QTY}")
+        NON_SLICE_ORDER_BUY = dhan.place_order(security_id=str(int(script_key)),            # The ID of the security to trade.
+                                        exchange_segment=dhanhq.NSE_FNO,                    # The exchange segment (e.g., NSE, BSE).
+                                        transaction_type=dhanhq.BUY,                 # The type of transaction (BUY/SELL).
+                                        quantity=str(int(NON_SLICE_ORD_QTY)),                # The quantity of the order.
+                                        order_type=dhanhq.LIMIT,                     # The type of order (LIMIT/MARKET/SL).
+                                        product_type=dhanhq.INTRA,                   # The product type (CNC, MIS, etc.).
+                                        price=trade_price,                           # The price of the order.
+                                        disclosed_quantity=0,                        # The disclosed quantity for the order.
+                                        after_market_order=False,                    # Flag for after market order.
+                                        validity='DAY',                              # The validity of the order (DAY, IOC, etc.).
+                                        amo_time='OPEN',                             # The time for AMO orders.
+                                        bo_profit_value=None,                        # The profit value for BO orders.
+                                        bo_stop_loss_Value=None,                     # The stop loss value for BO orders.
+                                        tag= buy_tag                                 # correlation ID for tracking.
+                                        )
+ 
+    return(buy_tag,execution_time)
+
+
+#Place SELL Order
+def place_sell_order(dhan,script_key, order_qty, trade_price, correlation_id, execution_time):
+    ORDER_QUANTITY = slice_the_order(qty)
+    
+    sell_tag = correlation_id+"_"+exec_time
+
+    SLICE_ORD_QTY = ORDER_QUANTITY['slice_qty']
+    NON_SLICE_ORD_QTY = ORDER_QUANTITY['non_slce_qty']
+    SELL_PARAMS = {
+        'EXIT_SELL_PROFIT': {
+            'order_type': dhanhq.LIMIT,
+            'trigger_price': float(trade_price)-0.1
+        },
+        'EXIT_SELL_LOSS': {
+            'order_type': dhanhq.SL,
+            'trigger_price': float(trade_price)+0.2
+        },        
+    }
+    if SLICE_ORD_QTY > 0:
+        print(f"Slice order QTY = {SLICE_ORD_QTY}")    
+        SLICE_ORDER_SELL = dhan.place_slice_order(
+                                        security_id=str(int(script_key)),                       # The ID of the security to trade.
+                                        exchange_segment=dhanhq.NSE_FNO,                       # The exchange segment (e.g., NSE, BSE).
+                                        transaction_type=dhanhq.SELL,                           # The type of transaction (BUY/SELL).
+                                        quantity=str(int(SLICE_ORD_QTY)),                        # The quantity of the order.
+                                        order_type=SELL_PARAMS[correlation_id]['order_type'],   # The type of order (LIMIT/MARKET/SL).
+                                        product_type=dhanhq.INTRA,                              # The product type (CNC, MIS, etc.).
+                                        price=float(trade_price), 
+                                        trigger_price=SELL_PARAMS[correlation_id]['trigger_price'],                      # The price of the order.             
+                                        disclosed_quantity=0,                                   # The disclosed quantity for the order. 
+                                        validity='DAY',                                 # The validity of the order (DAY, IOC, etc.).
+                                        amo_time='OPEN',                                # The time for AMO orders.
+                                        tag=sell_tag                                   # Optional correlation ID for tracking.
+                                        )
+    if NON_SLICE_ORD_QTY > 0:
+        print(f"Non slice order QTY = {NON_SLICE_ORD_QTY}")                                            
+        NON_SLICE_ORDER_SELL = dhan.place_slice_order(
+                                        security_id=str(int(script_key)),                       # The ID of the security to trade.
+                                        exchange_segment=dhanhq.NSE_FNO,                          # The exchange segment (e.g., NSE, BSE).
+                                        transaction_type=dhanhq.SELL,                             # The type of transaction (BUY/SELL).
+                                        quantity=str(int(SLICE_ORD_QTY)),                        # The quantity of the order.
+                                        order_type=SELL_PARAMS[correlation_id]['order_type'],                        # The type of order (LIMIT/MARKET/SL).
+                                        product_type=dhanhq.INTRA,                              # The product type (CNC, MIS, etc.).
+                                        price=float(trade_price), 
+                                        trigger_price=SELL_PARAMS[correlation_id]['trigger_price'],                    # The price of the order.
+                                        disclosed_quantity=0,                           # The disclosed quantity for the order. 
+                                        validity='DAY',                                 # The validity of the order (DAY, IOC, etc.).
+                                        amo_time='OPEN',                                # The time for AMO orders.
+                                        tag=sell_tag                                   # Optional correlation ID for tracking.
+                                        )
+    return(sell_tag,execution_time)
+
+
+def cancel_order(PENDING_ORDERS: list[str]):
+    for order_id in PENDING_ORDERS:
+        CANCEL_ORDERS.append(dhan.cancel_order(order_id))
+    return cancel_response
+
+
+#START,PROCESSING,PROCESS-EXIT-PROFIT,PROCESS-EXIT-LOSS,EXIT-PROFIT,EXIT-LOSS,PROCESS-EXIT-BE,EXIT-BE,COMPLETED
+
+while True:
+
+    # ------------------------------------------------------------------------------
+    if TRIGGER = "TRADE" AND LIMIT_PRICE > 0.0 AND STATUS = "START" AND LTP > LIMIT_PRICE:
+        CURRENT_POSITIONS = get_current_positions(dhan, SYMBOL_KEY)
+        if CURRENT_POSITIONS IS NOT NONE:
+            print(f"Current positions for {SYMBOL_KEY}: {CURRENT_POSITIONS}, CAN'T PLACE NEW ORDER")
+            TRIGGER = "STOP"
+            LIMIT_PRICE = NA
+        else:
+            print(f"Current positions for {SYMBOL_KEY} IS NONE, PROCEEDING TO PLACE ORDER")
+            BUY_TAG, exec_time = place_buy_order(SYMBOL_KEY, QTY, LIMIT_PRICE,BUY_CORR_ID)
+            STATUS = "PROCESSING"
+            PENDING_BUY_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, BUY_TAG)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+        
+    
+    if STATUS = "PROCESSING" AND PENDING_ORDERS != [] and LTP <= TRIGGER_PROFIT or LTP >= TRIGGER_SL:
+        print(f"Pending orders exist: {PENDING_ORDERS}, WAITING FOR ORDERS TO COMPLETE")
+        PENDING_BUY_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, BUY_TAG)
+        OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+        
+    # ------------------------------------------------------------------------------
+    STATUS = "PROCESS-EXIT-PROFIT" if LTP > TRIGGER_PROFIT else "PROCESS-EXIT-LOSS" if LTP < TRIGGER_SL else STATUS
+    # ------------------------------------------------------------------------------
+    if STATUS = "PROCESS-EXIT-PROFIT":
+        if PENDING_BUY_ORDERS != []:
+            print(f"Pending orders exist: {PENDING_ORDERS}, CANCELLING PENDING ORDERS")
+            cancel_response = cancel_order(PENDING_BUY_ORDERS)
+            PENDING_BUY_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, BUY_TAG)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+        if PENDING_SELL_ORDERS != []:
+            print(f"Pending orders exist: {PENDING_ORDERS}, CANCELLING PENDING ORDERS")
+            cancel_response = cancel_order(PENDING_SELL_ORDERS)
+            PENDING_SELL_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, sell_tag)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)           
+
+        else:
+            print(f"No pending orders, PROCEEDING TO PLACE PROFIT EXIT ORDER")
+            sell_tag, exec_time = place_sell_order(SYMBOL_KEY, OPEN_QTY, PROFIT_TARGET, correlation_id=SELL_PROFIT_CORR_ID, exec_time)
+            STATUS = "EXIT-PROFIT"
+            SELL_PROFIT_TAG = sell_tag
+            PENDING_SELL_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, sell_tag)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+    
+    if STATUS = "EXIT-PROFIT":
+        if PENDING_SELL_ORDERS != []:
+            print(f"Pending orders exist: {PENDING_ORDERS}, WAITING FOR ORDERS TO COMPLETE")
+            PENDING_SELL_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, sell_tag)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+        else:
+            print(f"No pending orders, TRADE COMPLETED SUCCESSFULLY")
+            STATUS = "COMPLETED"
+            TRIGGER = "STOP"
+            LIMIT_PRICE = NA
+
+
+
+    # ------------------------------------------------------------------------------
+    if STATUS = "PROCESS-EXIT-LOSS":
+        if PENDING_BUY_ORDERS != []:
+            print(f"Pending orders exist: {PENDING_ORDERS}, CANCELLING PENDING ORDERS")
+            cancel_response = cancel_order(PENDING_BUY_ORDERS)
+            PENDING_BUY_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, BUY_TAG)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+        if PENDING_SELL_ORDERS != []:
+            print(f"Pending orders exist: {PENDING_ORDERS}, CANCELLING PENDING ORDERS")
+            cancel_response = cancel_order(PENDING_SELL_ORDERS)
+            PENDING_SELL_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, sell_tag) 
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG) 
+        else:
+            print(f"No pending orders, PROCEEDING TO PLACE LOSS EXIT ORDER")
+            sell_tag, exec_time = place_sell_order(SYMBOL_KEY, OPEN_QTY, SL_TARGET, correlation_id=SELL_LOSS_CORR_ID, exec_time)
+            STATUS = "EXIT-LOSS"
+            SELL_LOSS_TAG = sell_tag
+            PENDING_SELL_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, sell_tag)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+    
+    if STATUS = "EXIT-LOSS":
+        if PENDING_SELL_ORDERS != []:
+            print(f"Pending orders exist: {PENDING_ORDERS}, WAITING FOR ORDERS TO COMPLETE")
+            PENDING_SELL_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, sell_tag)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+        else:
+            print(f"No pending orders, TRADE COMPLETED SUCCESSFULLY")
+            STATUS = "COMPLETED"
+            TRIGGER = "STOP"
+            LIMIT_PRICE = NA
+
+
+
+
+
+    # ------------------------------------------------------------------------------
+    # When price crocess TRIGGER_PROFIT or TRIGGER_SL, and comes back to Breakeven
+    # ------------------------------------------------------------------------------
+    if STATUS != "PROCESSING" and (STATUS == "PROCESS-EXIT-PROFIT" or STATUS == "EXIT-PROFIT") and TRIGGER = "TRADE" and AVG_PRICE>0.0 and LTP < AVG_PRICE:
+        STATUS = "PROCESS-EXIT-BE"
+    
+    if STATUS = "PROCESS-EXIT-BE":
+        if PENDING_BUY_ORDERS != []:
+            print(f"Pending orders exist: {PENDING_ORDERS}, CANCELLING PENDING ORDERS")
+            cancel_response = cancel_order(PENDING_BUY_ORDERS)
+            PENDING_BUY_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, BUY_TAG)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+        if PENDING_SELL_ORDERS != []:
+            print(f"Pending orders exist: {PENDING_ORDERS}, CANCELLING PENDING ORDERS")
+            cancel_response = cancel_order(PENDING_SELL_ORDERS)
+            PENDING_SELL_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, sell_tag)  
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+        else:
+            print(f"No pending orders, PROCEEDING TO PLACE LOSS EXIT ORDER")
+            sell_tag, exec_time = place_sell_order(SYMBOL_KEY, OPEN_QTY, AVG_PRICE, correlation_id=SELL_BE_CORR_ID, exec_time)
+            STATUS = "EXIT-BE"
+            SELL_BE_TAG = sell_tag
+            PENDING_SELL_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, sell_tag)    
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+
+    if STATUS = "EXIT-BE":
+        if PENDING_SELL_ORDERS != []:
+            print(f"Pending orders exist: {PENDING_ORDERS}, WAITING FOR ORDERS TO COMPLETE")
+            PENDING_SELL_ORDERS,TRADED_QTY,AVG_PRICE = get_order_status(dhan, sell_tag)
+            OPEN_QTY = get_updated_open_trades(dhan,BUY_TAG, SELL_PROFIT_TAG, SELL_LOSS_TAG, SELL_BE_TAG)
+        else:
+            print(f"No pending orders, TRADE COMPLETED SUCCESSFULLY")
+            STATUS = "COMPLETED"
+            TRIGGER = "STOP"
+            LIMIT_PRICE = NA
+
+    
+
+
+
+
+
